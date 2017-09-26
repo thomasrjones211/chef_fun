@@ -187,8 +187,10 @@ Lab
   - Create server.rb recipe inside apache folder
     - `chef generate recipe cookbooks/apache/ server`
       - .rb extension not needed if using chef generate
-      - also auto-populates your spec / test folders with server.rb
-  - Edit cookbooks/apache/recipes/server.rb
+      - auto-populates your spec / test folders with server.rb
+      - use of "generate" also auto-populates structure with a default.rb
+        - use for orchestration - call other recipes (see later)
+  - Edit `vi cookbooks/apache/recipes/server.rb`
     - Install apache
     - Create / edit file index.html (personalize to confirm)
     - Start the service (apache) installed earlier
@@ -204,6 +206,36 @@ Lab
           action [ :enable,  :start ]
         end
       ```  
-  - Check syntax - `chef exe ruby -c cookbooks/apache/recipes/server.rb`
-  - Run the recipe - `sudo chef-client cookbooks/apache/recipes/server.rb`
+  - Check syntax - `chef exec ruby -c cookbooks/apache/recipes/server.rb`
+  - Run the recipe - `sudo chef-client -z cookbooks/apache/recipes/server.rb`
   - Check the site - `curl localhost`
+
+### Convergence
+See which cookbooks you have: `ls cookbooks/`
+See the structure of cookbooks/apache: `tree cookbooks/apache/`
+Using `--runlist` or `-r`  option to specify cookbook and/or recipe
+  - General: `sudo chef-client -z --runlist "cookbook::recipe"`
+  - Specific: `sudo chef-client -z --runlist "apache::server"`
+  - Used (working along): `sudo chef-client -z -r "workstation::setup"`
+Running multiple recipes
+  - `sudo chef-client -z -r "recipe[apache::server],recipe[workstation::setup]"`
+    - Syntax: _recipe [cookbook::recipename]_
+    - Comma to separate, __but no space after__
+    - Can combine `-zr` if desired 
+
+### Calling a recipe from other recipes
+Use the default.rb (mentioned earlier) to wrap cookbooks / hijack cookbooks
+  - Edit `vi cookbooks/workstation/recipes/default.rb`
+  - Add dependency
+    - General `include_recipe "cookbook::recipe"`
+    - Specific `include_recipe "workstation::setup"`
+    - Save file `:wq`
+      - Essentially have default.rb call setup.rb
+      - Limited at this time (with this syntax) to recipes in "workstation" cookbook
+  - Run the default.rb `sudo chef-client -z -r "recipe[workstation]"`
+      - Specifying "default" is not necessary
+LAB - have cookbooks/apache/recipes/default.rb call server.rb
+  - Edit `vi cookbooks/apache/recipes/default.rb`
+  - Add dependency `include_recipe "apache::server"`
+    - Save file `:wq`
+  - Run the default.rb `sudo chef-client -z -r "recipe[apache]"`
