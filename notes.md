@@ -395,3 +395,45 @@ Update file that will invoke the template
       ```
     - Execute `sudo chef-client -zr "recipe[workstation]"`
     - Verify `cat /etc/motd`
+LAB - use template for index, rather than file
+- Create `chef generate template apache/ index.html`
+- Open `vi cookbooks/apache/recipes/server.rb`
+  - Copy file material
+    - Paste to `vi apache//templates/index.html.erb`
+      - change from string interpolation to erb tags
+    - Build real (proper) HTML file, if you want
+    ```<html>
+        <head>
+           <title>This is my first cookbook website.</title>
+        </head>
+        <body>
+            <h1>Hello World!!</h1> <br>
+            <h2>HOSTNAME: <%= node['hostname'] %> </h2> <br>
+            <h2> IPADDRSS: <%= node['ipaddress'] %> </h2>
+        </body>
+      </html>
+    ```
+    - Save `:wq`
+- Update `vi cookbooks/apache/recipes/server.rb'
+  ```package 'httpd' do
+      action :install
+    end
+
+    template '/var/www/html/index.html' do
+      source 'index.html.erb'
+      action :create
+    end
+
+    service 'httpd' do
+      action [ :enable,  :start ]
+    end
+  ```
+- Execute `sudo chef-client -zr "recipe[apahe]"`
+- Confirm `curl localhost`
+- Update change management: `vi cookbooks/apache/metadata.rb`
+  - Update version to '0.2.1' - minor change, and a patch
+    - No real update to functionality, rather refactor to make more readable
+  - git
+    - `git status`
+    - `git add .`
+    - `git commit -m "refactored file resource with a template for index.html"`
