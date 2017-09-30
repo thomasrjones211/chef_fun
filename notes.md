@@ -62,7 +62,7 @@ Create (and save) recipe called "hello.rb" at root
   ```
   - Creates a file called hello.txt
   - Puts the content "Hello, World!" into new file
-Execute the (Ruby) recipe on remote
+Run the (Ruby) recipe on remote
   `sudo chef-client --local-mode hello.rb`
   - local-mode: not using chef server at this time
   - Per output on screen
@@ -147,7 +147,7 @@ Resources (3-1,2)
           group 'root'
         end
       ```
-    - Execute on local host using `sudo chef-client --local-mode setup.rb`
+    - Run on local host using `sudo chef-client --local-mode setup.rb`
     - Check using
       - `which tree`
       - `which ntp`
@@ -207,7 +207,7 @@ Lab
         end
       ```  
   - Check syntax - `chef exec ruby -c cookbooks/apache/recipes/server.rb`
-  - Execute the recipe - `sudo chef-client -z cookbooks/apache/recipes/server.rb`
+  - Run the recipe - `sudo chef-client -z cookbooks/apache/recipes/server.rb`
   - Check the site - `curl localhost`
 
 ### Convergence
@@ -232,13 +232,13 @@ Use the default.rb (mentioned earlier) to wrap cookbooks / hijack cookbooks
     - Save file `:wq`
       - Essentially have default.rb call setup.rb
       - Limited at this time (with this syntax) to recipes in "workstation" cookbook
-  - Execute the default.rb `sudo chef-client -z -r "recipe[workstation]"`
+  - Run the default.rb `sudo chef-client -z -r "recipe[workstation]"`
       - Specifying "default" is not necessary
 LAB - have cookbooks/apache/recipes/default.rb call server.rb
   - Open `vi cookbooks/apache/recipes/default.rb`
   - Add dependency `include_recipe "apache::server"`
     - Save file `:wq`
-  - Execute the default.rb `sudo chef-client -z -r "recipe[apache]"`
+  - Run the default.rb `sudo chef-client -z -r "recipe[apache]"`
 
 ### System Inventory / Discovery tool - Ohai
 - The Node Object - you may want / need to know information about the systems you are deploying (or to).
@@ -291,7 +291,7 @@ LAB - have cookbooks/apache/recipes/default.rb call server.rb
         MEMORY: #{node['memory']['total']}
         "
     ```
-  - Execute the client `sudo chef-client -zr "recipe[workstation]"`
+  - Run the client `sudo chef-client -zr "recipe[workstation]"`
   - Look at contents of motd file `cat /etc/motd`
     __notice that the queried values are output, not the _code (or syntax)___
       HOSTNAME: localhost
@@ -316,7 +316,7 @@ LAB - update the index.html file to contain Hostname and IPADDRESS
     action [ :enable,  :start ]
   end
 ```
-- Execute the client `sudo chef-client -zr "recipe[apache]"`
+- Run the client `sudo chef-client -zr "recipe[apache]"`
 - Update change management: `vi cookbooks/apache/metadata.rb`
   - Update version to '0.2.0' - minor change, no patch
   - git
@@ -333,7 +333,7 @@ Build
   - Check the structure `tree cookbooks/workstation/`
   - Cut over to ___See template-file-and-ERB.pdf___
     - ERB definition (and _tags_) starting on 7-7
-      - `<% ...%>` Execute code inside brackets, but do not print (or insert) results to template file
+      - `<% ...%>` run code inside brackets, but do not print (or insert) results to template file
       - `<%=...%>` Angry squid means evaluate code in brackets, then print directly to output (template) file
   - Open template `vi cookbooks/workstation/templates/motd.erb`
     - Copy _"content"_ of motd to motd.erb instead
@@ -359,7 +359,7 @@ Update file that will invoke the template
       end
     ```
     - Save file `:wq`
-  - Execute `sudo chef-client -zr "recipe[workstation]"`
+  - Run `sudo chef-client -zr "recipe[workstation]"`
     - Verify that the "what" has not really changed, just the "how" `cat /etc/motd`
 - Update change management: `vi cookbooks/workstation/metadata.rb`
   - Update version to '0.2.1' - minor change, and a patch
@@ -393,7 +393,7 @@ Update file that will invoke the template
         MEMORY: <%= node['memory']['total'] %>
         NAME:
       ```
-    - Execute `sudo chef-client -zr "recipe[workstation]"`
+    - Run `sudo chef-client -zr "recipe[workstation]"`
     - Verify `cat /etc/motd`
 LAB - use template for index, rather than file
 - Create `chef generate template apache/ index.html`
@@ -428,7 +428,7 @@ LAB - use template for index, rather than file
       action [ :enable,  :start ]
     end
   ```
-- Execute `sudo chef-client -zr "recipe[apahe]"`
+- Run `sudo chef-client -zr "recipe[apahe]"`
 - Confirm `curl localhost`
 - Update change management: `vi cookbooks/apache/metadata.rb`
   - Update version to '0.2.1' - minor change, and a patch
@@ -437,3 +437,61 @@ LAB - use template for index, rather than file
     - `git status`
     - `git add .`
     - `git commit -m "refactored file resource with a template for index.html"`
+
+### Other common resources
+___See each section in chapter 8____
+- cookbook_file         (8.2)
+  - Similar to template, but for static content (No variables or dynamic content)
+  - Shipped with cookbook, like a configuration file
+  - Can use the `chef generate file` option to create a file location in "tree"
+- remote_file           (8.3)
+  - Use when you want to download a file from a remote server
+  - Rather than shipping with a cookbbok, remote_file can download from somewhere else and copy to the local node (e.g. insert a picture)
+  - Requires file (available locally to the template / recipe) that you want use it.
+    - recipe - to declare and download it
+    - file - (index) to call / src it
+  - __note__ discussion of how to edit (and reload) vagrantfile to port forward
+    - default is 8080, but 9000 used in Examples
+    - makes it possible to render the index.html files we have been creating
+- Execute               (8.4)
+  - ___See setup.rb___, note / rewatch each of the sections commented out
+    - Bash - ok, but could be better
+      - Example
+        - create a script
+        - specify the user
+        - put in code to create a directory
+        - set / change owner
+      - Lacks conditionality (tests or item potency)
+        - guards - evaluate state of the node (and run...or not)
+          1. not_if - prevent condition if returns __true__
+            - does the directory exist?
+              - if so, do not execute the code above returns true
+            - could also use Ruby to test
+              - open another _do_ block
+          2. only_if - allows condition only if returns __true__
+      - Not platform agnostic / not all systems are going to run bash (interpreter)
+    - Execute - also ok, more compatible, but could be better
+      - does not specify the interpreter, so allows chef to figure out for you
+      - set up similar to bash example above to create script; as well as another example showing pre-existing
+- Users / groups            (8.5)
+  - Creating user and group resources  
+    - Use `append` to do exactly that or it will overwrite the group to only have the 1 user
+  - Check ___user-and-group.txt___ to see cli history
+    - See user entries  `cat /etc/passwd`
+    - See group entries `cat /etc/group`
+- Notifications             (8.6)
+  - Notify or subscribe to know about changes
+    - ___See server.rb___ for syntax for both
+      - Syntax
+        - notifies :action, 'resource[name]', :timer
+          - before - send of notify the service to take action before the service that I am embedded in   
+          - delayed - execute the resource that  I am in, then send the notification to the service
+          - immediate - as advertised ... do right away
+        - subscribes follows the same syntax
+      - Examples
+        - _notifies_ (template -> service) tells the apache service that something changed and should "restart"
+        - _subscribes_ (service -> template) apache listens for change rather then template push the Notifications
+  - Just changing the files is not enough
+    - Requires change
+    - Client runs again - marking the fact that state has changed
+  - Available to all Chef resources

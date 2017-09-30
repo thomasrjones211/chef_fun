@@ -7,27 +7,32 @@ template '/var/www/html/index.html' do
 end
 
 # example of bash resource to create directory and chown to apache
+	# bash 'inline script' do
+	#   user 'root'
+	#   code "mkdir -p /var/www/mysites/ && chown -R apache /var/www/mysites/"
+	#   # not_if '[ -d /var/www/mysites/]'
+	#   not_if do
+	#     File.directory?('/var/www/mysites/')
+	#   end
+	# end
 
-# bash 'inline script' do
-#   user 'root'
-#   code "mkdir -p /var/www/mysites/ && chown -R apache /var/www/mysites/"
-#   # not_if '[ -d /var/www/mysites/]'
-#   not_if do
-#     File.directory?('/var/www/mysites/')
-#   end
-# end
+# example of execute resource (define script)
+	# execute 'run a script' do
+	#   command <<-EOH
+	#   mkdir -p /var/www/mysites/ /
+	#   chown -R apache /var/www/mysites/
+	#   EOH
+	#   not_if do
+	#     File.directory?('/var/www/mysites/')
+	#   end
+	# end
 
-# example of execute resource
-
-# execute 'run a script' do
-#   command <<-EOH
-#   mkdir -p /var/www/mysites/ /
-#   chown -R apache /var/www/mysites/
-#   EOH
-#   not_if do
-#     File.directory?('/var/www/mysites/')
-#   end
-# end
+# example of execute resource (run pre-existing script)
+	# execute 'run  script' do
+	#   user "root"
+	#   command './myscript.sh'
+	#   not_if
+	# end
 
 # the directory resource that should be used
 # when handling directory creation
