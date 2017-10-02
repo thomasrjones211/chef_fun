@@ -495,3 +495,10 @@ ___See each section in chapter 8____
     - Requires change
     - Client runs again - marking the fact that state has changed
   - Available to all Chef resources
+
+### Troubleshooting
+Chef Development Kit
+- `chef exec` - run command in context of embedded Ruby
+  - Chef installs it's own Ruby (only available locally within available context)
+  - `chef exec ruby -c` checks syntax
+    - `chef exec ruby -c`
