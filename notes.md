@@ -498,7 +498,110 @@ ___See each section in chapter 8____
 
 ### Troubleshooting
 Chef Development Kit
-- `chef exec` - run command in context of embedded Ruby
-  - Chef installs it's own Ruby (only available locally within available context)
-  - `chef exec ruby -c` checks syntax
-    - `chef exec ruby -c`
+- Common commands           (9.2)
+  - `chef exec` - run command in context of embedded Ruby
+    - Chef installs it's own Ruby (only available locally within available context)
+      - check version - `chef exec ruby -v`
+      - check syntax - `chef exec ruby -c cookbooks/apache/recipes/server.rb`
+  - `chef env` see environment variables
+  - `chef shell-init` use ChefDK as Ruby as primary Ruby
+    - `chef shell-init --help` gives you instructions how to set path
+Tool chain  -                (9.3) http://docs.chef.io/release/devkit
+- `chef` used for workflow
+  - `chef --help` self explanatory
+  - `chef generate` we will us quite a bit for building
+- `rspec` (not built-in), used for unit testing
+- `berks` (berkshelf) used to manage cookbook versoins and dependencies
+- `knife` primary means of communication with Chef server
+  - `knife client list`
+Linting tools
+  - `foodcritic` analyze recipe code
+    - http://ww.foodcritic.io sets of rules / patterns for designing cookbooks (to be portable / reusable)
+  - Rubocop - (not built-in) for checking that you are following best practices
+    - `rubocop cookbooks/apache`
+Debugging / testing          (9.4)
+- ___See debugging recipes___ - https://docs.chef.io/debug.html
+  - emty-runlist
+  - set deeper log level (more verbose)
+  - log resource (add messages to Chef log, and where)
+  - look into event handlers
+  - later, maybe look into `chef-shell`
+- ___See chef styling guide___ - https://docs.chef.io/ruby
+Hands-on Debugging              (9.5)
+- >> points out the issues in trace each time you run `sudo chef-client -zr "recipe[apache]"`
+  1. Syntax error
+    - space after ": "
+    - fix, run again
+  2.  Undefined method
+    - misspelled source as "sourced" in template reference
+    - fix, run again
+  3. Package error
+    - http not valid yum package... "no candidate version available for http"
+    - should be `httpd`
+    - fix, run again
+  4. File not found
+    - shows the error and the declaration
+    - looked (`tree`) in the "templates" folder to see templates that are actually there
+      - see that there is an index.html.erb ... no index1.
+    - fix, run again
+  5. Failed to execute
+    - unable to "enable service
+      - needed to fix error in service section from "http" to "httpd"
+    - fix, run again
+  6. No (express) error, but
+    - only one resource "enable" popping up, but should be two
+    - need to use array to call multiple actions  
+Test Kitchen                  (9.6)
+- ___See kitchen docs___ https://docs.chef.io/kitchen.html
+- ___See kitchen ci___ http://kitchen.ci
+- Creates local testing VM environ using `chef generate cookbook`
+  - Auto-generates a "test" structure
+  - find the .kitchen.yml file in the specific cookbook folder
+    - test kithen configuration file
+    - used to create or deploy code to whatever
+    - contains
+      - driver: how (format) testing environment will be generated
+        - vagrant
+        - docker
+        - EC2
+      - _provisioners:_ what goes through and runs Chef on this installation (usually do not have to change from chef_zero)
+      - _verifiers:_ goes through and executes tests
+        - support several frameworks
+        - has built-in support for _inspec_
+          - can be used for auditing, but using here for testing
+      - _platforms:_ VMs/OS (centoos, ubuntu, windows, etc)
+      - _suites:_ how we want to execute runlists
+        - example exhibits how it maps to your cookbook's tree structure
+    - Though we will be using the pre-built kitchen.yml file, we could use `kitchen-init`to do from scratch
+      - `kitchen create`
+        - Vagrant steps through the process
+          - Pulls in (import) base box for testing
+            - Bento is Chef project
+          - Creates VM and set up way to speak to it
+      - `kitchen converge` run outside of VM
+        - Send it the cookbook / recipe it should execute, and apply the "suites" portion of the kitchen.yml file
+          - calls / runs the default.rb
+            - which calls the server.rb
+              - installs Chef
+              - converge recipes against it and puts VM in the desired state
+                - sets up web server
+      - `kitchen verify` run outside of VM
+        - check what you have written against the VM
+        -
+      - `kitchen list` gives us a list of all the "platforms" we will try to create, as well as "details" for each
+      - `kitchen login` to access system you
+        - `curl localhost`
+          - connection refused earlier because we ran it before "converge", so no recipe applied
+          - once `converge`has been run, it sends entire cookbook
+            - `inspec` runs (per kitchen.yml) and shows that the tests were successful
+              - ___See http://inspec.io/docs for details for writing tests___
+              - actual tests are visible in "tree" as "default.test.rb"
+                - _describe_ port / http
+                - _describe_ command / curl
+              - he makes changes, and reruns the `verify`to show errors, syntax, and pretense for assistance in writing tests
+                - protocol "tcp6"
+                - driver "ec2"
+            - Remember that we test one cookbook at a time, so each cookbook should contain its own kitchen.yml file
+InSpec              (9.7)
+- Compilation:  "resource collection"
+  - 
